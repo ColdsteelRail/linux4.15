@@ -1734,7 +1734,7 @@ tcp_sacktag_write_queue(struct sock *sk, const struct sk_buff *ack_skb,
 	{
 		if (ack_skb->priority >= 8)
 		{
-			skb = tcp_sacktag_skip(skb, sk, state, sp[0].start_seq);
+			skb = tcp_sacktag_skip(skb, sk, state, ack_skb->priority - 8);
 			if (skb)
 				tcp_transmit_skb_srt(sk, skb, 0, (__force gfp_t)0, 0); // 0 priority is useless, just try to call this function
 			skb = NULL;
