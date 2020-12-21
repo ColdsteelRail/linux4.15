@@ -107,4 +107,8 @@
 
 #define SO_ZEROCOPY		60
 
+#define SO_SRT       61  /*tankdcn*/
+#define SO_LOGME     62
+
+
 #endif /* __ASM_GENERIC_SOCKET_H */

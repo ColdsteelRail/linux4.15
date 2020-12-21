@@ -919,6 +919,7 @@ static void tcp_skb_mark_lost(struct tcp_sock *tp, struct sk_buff *skb)
 
 		tp->lost_out += tcp_skb_pcount(skb);
 		tcp_sum_lost(tp, skb);
+	
 		TCP_SKB_CB(skb)->sacked |= TCPCB_LOST;
 	}
 }
@@ -1727,6 +1728,21 @@ tcp_sacktag_write_queue(struct sock *sk, const struct sk_buff *ack_skb,
 		       !cache->end_seq)
 			cache++;
 	}
+
+	/*tankdcn: check and transmit*/
+	if (sk->sk_srt)
+	{
+		if (ack_skb->priority >= 8)
+		{
+			skb = tcp_sacktag_skip(skb, sk, state, sp[0].start_seq);
+			if (skb)
+				tcp_transmit_skb_srt(sk, skb, 0, (__force gfp_t)0, 0); // 0 priority is useless, just try to call this function
+			skb = NULL;
+			//if (skb)
+			//	tcp_skb_mark_lost(tp, skb);
+		}
+	}
+
 
 	while (i < used_sacks) {
 		u32 start_seq = sp[i].start_seq;
@@ -4370,7 +4386,7 @@ static int tcp_try_rmem_schedule(struct sock *sk, struct sk_buff *skb,
 	return 0;
 }
 
-static void tcp_data_queue_ofo(struct sock *sk, struct sk_buff *skb)
+void tcp_data_queue_ofo(struct sock *sk, struct sk_buff *skb)
 {
 	struct tcp_sock *tp = tcp_sk(sk);
 	struct rb_node **p, *parent;
@@ -4426,6 +4442,19 @@ coalesce_done:
 		parent = &tp->ooo_last_skb->rbnode;
 		p = &parent->rb_right;
 		goto insert;
+	}
+
+	/* tankdcn: check if ofo queue's skb need to retransmit*/
+        if (sk->sk_srt)
+        {
+                skb1 = rb_to_skb(*p);
+                if (skb1->priority != skb->priority)
+        	{
+			if (sk->sk_logme)
+				printk(KERN_DEBUG "tankdcn: tcp_data_ofo_queue sending out an ack \n");
+			tcp_send_ack_srt(sk, 8 + TCP_SKB_CB(skb1)->end_seq);
+                }
+		skb1 = NULL;
 	}
 
 	/* Find place to insert this segment. Handle overlaps on the way. */

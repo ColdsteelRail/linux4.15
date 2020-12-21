@@ -498,7 +498,15 @@ packet_routed:
 			     skb_shinfo(skb)->gso_segs ?: 1);
 
 	/* TODO : should we use skb->sk here instead of sk ? */
-	skb->priority = sk->sk_priority;
+	/* tanklabdcn: Adding priorty to tos header in the DSCP field*/
+	if (sk->sk_srt)
+		iph->tos = iph->tos | (skb->priority << 2);
+	else
+		skb->priority = sk->sk_priority;
+
+	if (sk->sk_logme)
+		printk(KERN_DEBUG "tankdcn: ip_queue_xmit: Sending out packet with priority = %u\n", skb->priority);
+
 	skb->mark = sk->sk_mark;
 
 	res = ip_local_out(net, sk, skb);

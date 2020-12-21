@@ -816,6 +816,20 @@ set_rcvbuf:
 			ret = -EPERM;
 		break;
 
+	case SO_SRT:				/* tankdcn */
+		if (val > 0)
+			sk->sk_srt = 1;
+		else
+			sk->sk_srt = 0;
+		break;
+
+	case SO_LOGME:				/* tankdcn */
+		if (val > 0)
+			sk->sk_logme = 1;
+		else
+			sk->sk_logme = 0;
+		break;
+
 	case SO_LINGER:
 		if (optlen < sizeof(ling)) {
 			ret = -EINVAL;	/* 1003.1g */
@@ -1177,6 +1191,14 @@ int sock_getsockopt(struct socket *sock, int level, int optname,
 
 	case SO_PRIORITY:
 		v.val = sk->sk_priority;
+		break;
+
+	case SO_SRT:						/* tankdcn */
+		v.val = sk->sk_srt;
+		break;
+	
+	case SO_LOGME:						/* tankdcn */
+		v.val = sk->sk_logme;
 		break;
 
 	case SO_LINGER:
