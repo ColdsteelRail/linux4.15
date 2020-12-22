@@ -4444,16 +4444,19 @@ coalesce_done:
 		goto insert;
 	}
 
-	/* tankdcn: check if ofo queue's skb need to retransmit*/
-        if (sk->sk_srt)
-        {
-                skb1 = rb_to_skb(*p);
-                if (skb1->priority != skb->priority)
-        	{
+	/* tankdcn: check if ofo queue's skb need to retranmit*/
+	if (sk->sk_srt)
+	{
+		skb1 = rb_to_skb(rb_first(&tp->out_of_order_queue)); /*head of out of order queue*/
+		if (skb1->priority != skb->priority) 
+		{
 			if (sk->sk_logme)
-				printk(KERN_DEBUG "tankdcn: tcp_data_ofo_queue sending out an ack \n");
-			tcp_send_ack_srt(sk, 8 + TCP_SKB_CB(skb1)->end_seq);
-                }
+			{
+				if (sk->sk_logme)
+					printk(KERN_DEBUG "tankdcn: tcp_data_ofo_queue sending out an ack \n");
+				tcp_send_ack_srt(sk, 8 + TCP_SKB_CB(skb1)->end_seq);
+			}
+		}
 		skb1 = NULL;
 	}
 
