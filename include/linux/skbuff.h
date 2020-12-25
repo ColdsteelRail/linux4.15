@@ -842,6 +842,8 @@ struct sk_buff {
 				*data;
 	unsigned int		truesize;
 	refcount_t		users;
+
+	__u32		skb_retrans;	/* tankdcn: send a packet at sender*/
 };
 
 #ifdef __KERNEL__

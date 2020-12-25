@@ -483,8 +483,8 @@ struct sock {
 	struct sock_reuseport __rcu	*sk_reuseport_cb;
 	struct rcu_head		sk_rcu;
 
-		int			sk_srt;		/*tankdcn*/
-	int			sk_logme;
+	int			sk_srt;		/*tankdcn*/
+	int			sk_logme;	/*tankdcn*/
 };
 
 enum sk_pacing {

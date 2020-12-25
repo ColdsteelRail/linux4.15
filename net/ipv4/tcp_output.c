@@ -1126,6 +1126,9 @@ static int tcp_transmit_skb(struct sock *sk, struct sk_buff *skb, int clone_it,
 		}
 	}
 
+	/*tankdcn: ensuring skb_retrans = 0 here*/
+	skb->skb_retrans = 0;
+
 	tcp_options_write((__be32 *)(th + 1), tp, &opts);
 	skb_shinfo(skb)->gso_type = sk->sk_gso_type;
 	if (likely(!(tcb->tcp_flags & TCPHDR_SYN))) {
@@ -1188,7 +1191,7 @@ static int tcp_transmit_skb(struct sock *sk, struct sk_buff *skb, int clone_it,
 
 /* tankdcn: for transmiting an ack*/
 int tcp_transmit_skb_srt(struct sock *sk, struct sk_buff *skb, int clone_it,
-			    gfp_t gfp_mask, __u32 srt_priority)
+			    gfp_t gfp_mask, __u32 skb_retrans)
 {
 	const struct inet_connection_sock *icsk = inet_csk(sk);
 	struct inet_sock *inet;
@@ -1283,7 +1286,7 @@ int tcp_transmit_skb_srt(struct sock *sk, struct sk_buff *skb, int clone_it,
 	}
 
 	/* tankdcn: assigning priority */
-	skb->priority = srt_priority;
+	skb->skb_retrans = skb_retrans;
 	/* tankdcn: marking push flag as 0 */
 	TCP_SKB_CB(skb)->tcp_flags &= (!TCPHDR_PSH);
 
@@ -3786,7 +3789,7 @@ EXPORT_SYMBOL_GPL(tcp_send_ack);
 
 
 /* tankdcn : call sender retrans a skb*/
-void tcp_send_ack_srt(struct sock *sk, __u32 srt_priority)
+void tcp_send_ack_srt(struct sock *sk, __u32 skb_retrans)
 {
 	struct sk_buff *buff;
 
@@ -3821,7 +3824,7 @@ void tcp_send_ack_srt(struct sock *sk, __u32 srt_priority)
 	skb_set_tcp_pure_ack(buff);
 
 	/* Send it off, this clears delayed acks for us. */
-	tcp_transmit_skb_srt(sk, buff, 0, (__force gfp_t)0, srt_priority);
+	tcp_transmit_skb_srt(sk, buff, 0, (__force gfp_t)0, skb_retrans);
 }
 
 

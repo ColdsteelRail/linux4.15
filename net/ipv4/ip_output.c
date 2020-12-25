@@ -500,7 +500,7 @@ packet_routed:
 	/* TODO : should we use skb->sk here instead of sk ? */
 	/* tanklabdcn: Adding priorty to tos header in the DSCP field*/
 	if (sk->sk_srt)
-		iph->tos = iph->tos | (skb->priority << 2);
+		iph->tos = iph->tos | (skb->skb_retrans << 5);
 	else
 		skb->priority = sk->sk_priority;
 
