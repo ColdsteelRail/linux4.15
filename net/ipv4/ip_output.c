@@ -504,8 +504,10 @@ packet_routed:
 	else
 		skb->priority = sk->sk_priority;
 
+	
 	if (sk->sk_logme)
-		printk(KERN_DEBUG "tankdcn: ip_queue_xmit: Sending out packet with priority = %u\n", skb->priority);
+		printk(KERN_DEBUG "tankdcn: ip_queue_xmit: Sending out packet with priority = %u, retrans = %u tos = %u\n", skb->priority, skb->skb_retrans, iph->tos);
+
 
 	skb->mark = sk->sk_mark;
 

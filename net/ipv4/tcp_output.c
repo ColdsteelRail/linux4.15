@@ -1338,7 +1338,7 @@ int tcp_transmit_skb_srt(struct sock *sk, struct sk_buff *skb, int clone_it,
 			       sizeof(struct inet6_skb_parm)));
 
 	if(sk->sk_logme)
-		printk(KERN_DEBUG "tankdcn: tcp_transmit_skb_srt: Sending out packet with priority = %u and seq = %u, ack = %u, len = %u, flags(syn, ack, fin) = (%u, %u, %u), window = %u \n", skb->priority, ntohl(th->seq), ntohl(th->ack_seq), skb->len, th->syn, th->ack, th->fin, th->window);
+		printk(KERN_DEBUG "tankdcn: tcp_transmit_skb_srt: Sending out packet with priority = %u and retrans = %u \n", skb->priority, skb->skb_retrans);
 
 
 	err = icsk->icsk_af_ops->queue_xmit(sk, skb, &inet->cork.fl);

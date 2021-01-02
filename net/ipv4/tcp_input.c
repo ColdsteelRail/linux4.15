@@ -4429,18 +4429,6 @@ coalesce_done:
 		goto insert;
 	}
 
-	/* tankdcn: check if ofo queue's skb need to retranmit*/
-	if (sk->sk_srt){
-		struct sk_buff *ofo_first = rb_to_skb(rb_first(&tp->out_of_order_queue)); /*head of out of order queue*/
-		struct sk_buff *tail = skb_peek_tail(&sk->sk_receive_queue);	/* tail of recieve queue */
-		if (ofo_first->priority == tail->priority) 
-		{
-			if (sk->sk_logme)
-				printk(KERN_DEBUG "tankdcn: tcp_data_ofo_queue sending out an ack \n");
-			tcp_send_ack_srt(sk, 1);
-		}
-	}
-
 	/* Find place to insert this segment. Handle overlaps on the way. */
 	parent = NULL;
 	while (*p) {
@@ -5319,6 +5307,28 @@ void tcp_rcv_established(struct sock *sk, struct sk_buff *skb,
 	unsigned int len = skb->len;
 	struct tcp_sock *tp = tcp_sk(sk);
 
+	if(sk->sk_logme)
+		printk(KERN_DEBUG "tankdcn: tcp_rcv_established: received packet with priority = %u, retrans = %u\n", skb->priority, skb->skb_retrans);
+
+	/* tankdcn: if ack packet */
+	if (sk->sk_srt && skb->skb_retrans)
+	{
+		/* update the sack board*/
+		if (TCP_SKB_CB(skb)->sacked) {
+			tcp_sacktag_write_queue(sk, skb, tp->snd_una, NULL);
+		}
+
+		/* retransmit */
+		struct sk_buff *skb_to_send;
+		skb_to_send = tcp_sacktag_skip(skb, sk, NULL, TCP_SKB_CB(skb)->ack_seq);	/* get the packet*/
+		if (skb_to_send)
+			tcp_transmit_skb_srt(sk, skb, 0, (__force gfp_t)0, 0);					/* send it*/
+		if(sk->sk_logme)
+			printk(KERN_DEBUG "tankdcn: tcp_rcv_established: Sending out a packet\n");
+			
+		return 0;
+	}
+
 	tcp_mstamp_refresh(tp);
 	if (unlikely(!sk->sk_rx_dst))
 		inet_csk(sk)->icsk_af_ops->sk_rx_dst_set(sk, skb);
@@ -5336,30 +5346,6 @@ void tcp_rcv_established(struct sock *sk, struct sk_buff *skb,
 	 *	extra cost of the net_bh soft interrupt processing...
 	 *	We do checksum and copy also but from device to kernel.
 	 */
-
-	if(sk->sk_logme)
-	{
-		printk(KERN_DEBUG "tankdcn: tcp_rcv_established: received packet with priority = %u, length = %u, seq = %u, end_seq = %u\n", skb->priority, skb->len, TCP_SKB_CB(skb)->seq, TCP_SKB_CB(skb)->end_seq);
-	}
-
-	/* tankdcn: if ack packet */
-	if (sk->sk_srt && skb->skb_retrans)
-	{
-		/* update the sack board*/
-		if (TCP_SKB_CB(skb)->sacked) {
-			tcp_sacktag_write_queue(sk, skb, tp->snd_una, NULL);
-		}
-
-		/* retransmit */
-		struct sk_buff *skb_to_send;
-		skb_to_send = tcp_sacktag_skip(skb, sk, NULL, TCP_SKB_CB(skb)->ack_seq);	/* get the packet*/
-		if (skb_to_send)
-			tcp_transmit_skb_srt(sk, skb, 0, (__force gfp_t)0, 0);					/* send it*/
-
-		return 0;
-	}
-
-
 
 	tp->rx_opt.saw_tstamp = 0;
 
@@ -5493,6 +5479,22 @@ step5:
 
 	/* step 7: process the segment text */
 	tcp_data_queue(sk, skb);
+
+	/* tankdcn: check if ofo queue's skb need to retranmit*/
+	if (sk->sk_srt){
+		struct sk_buff *ofo_first = rb_to_skb(rb_first(&tp->out_of_order_queue)); /*head of out of order queue*/
+		struct sk_buff *tail = skb_peek_tail(&sk->sk_receive_queue);	/* tail of recieve queue */
+		if (ofo_first && sk->sk_logme)
+			printk(KERN_DEBUG "tankdcn: ofo_fiirst priority = %u\n", ofo_first->priority);
+		if (tail && sk->sk_logme)
+			printk(KERN_DEBUG "tankdcn: tail priority = %u\n", tail->priority);
+		if (ofo_first && tail && ofo_first->priority == tail->priority) 
+		{
+			if (sk->sk_logme)
+				printk(KERN_DEBUG "tankdcn: tcp_rcv_establisheds sending out an ack \n");
+			tcp_send_ack_srt(sk,  1);
+		}
+	}
 
 	tcp_data_snd_check(sk);
 	tcp_ack_snd_check(sk);

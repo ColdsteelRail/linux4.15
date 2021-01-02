@@ -491,7 +491,9 @@ int ip_rcv(struct sk_buff *skb, struct net_device *dev, struct packet_type *pt, 
 	skb_orphan(skb);
 
 	skb->skb_retrans = (iph->tos) >> 5;	/* tankdcn: setting retrans value in skb*/
-	skb->priority = ((iph->tos) << 3 ) >> 5; /* tankdcn: setting priority value in skb */
+	skb->priority = ((iph->tos) & 0xdf ) >> 2; /* tankdcn: setting priority value in skb */
+	if(skb->skb_retrans == 1)
+                printk(KERN_DEBUG "tankdcn: ip_rcv a packet with retrans = %u, tos = %u\n", skb->skb_retrans, iph->tos);
 
 	return NF_HOOK(NFPROTO_IPV4, NF_INET_PRE_ROUTING,
 		       net, NULL, skb, dev, NULL,
