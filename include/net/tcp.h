@@ -537,9 +537,9 @@ void tcp_send_active_reset(struct sock *sk, gfp_t priority);
 int tcp_send_synack(struct sock *);
 void tcp_push_one(struct sock *, unsigned int mss_now);
 void tcp_send_ack(struct sock *sk);
-void tcp_send_ack_srt(struct sock *sk, __u32 skb_retrans);	/* tankdcn */
+void tcp_send_ack_srt(struct sock *sk, __u32 skb_retrans, __u32 skb_onlysack);	/* tankdcn */
 int tcp_transmit_skb_srt(struct sock *sk, struct sk_buff *skb, int clone_it,
-			    gfp_t gfp_mask, __u32 skb_retrans);	/* tankdcn: transmit skb in tcp_input.c*/
+			    gfp_t gfp_mask, __u32 skb_retrans, __u32 skb_onlysack);	/* tankdcn */
 void tcp_send_delayed_ack(struct sock *sk);
 void tcp_send_loss_probe(struct sock *sk);
 bool tcp_schedule_loss_probe(struct sock *sk, bool advancing_rto);

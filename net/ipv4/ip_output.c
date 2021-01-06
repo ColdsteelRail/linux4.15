@@ -498,9 +498,12 @@ packet_routed:
 			     skb_shinfo(skb)->gso_segs ?: 1);
 
 	/* TODO : should we use skb->sk here instead of sk ? */
-	/* tanklabdcn: Adding priorty to tos header in the DSCP field*/
+	/* tanklabdcn: Adding values to tos header in the DSCP field*/
 	if (sk->sk_srt)
+	{
 		iph->tos = iph->tos | (skb->skb_retrans << 5);
+		iph->tos = iph->tos | (skb->skb_onlysack << 6);	
+	}
 	else
 		skb->priority = sk->sk_priority;
 

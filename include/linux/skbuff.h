@@ -843,7 +843,8 @@ struct sk_buff {
 	unsigned int		truesize;
 	refcount_t		users;
 
-	__u32		skb_retrans;	/* tankdcn: send a packet at sender*/
+	__u32		skb_retrans;	/* tankdcn: retransmit a packet*/
+	__u32           skb_onlysack;	/* tankdcn: only update sack board*/
 };
 
 #ifdef __KERNEL__

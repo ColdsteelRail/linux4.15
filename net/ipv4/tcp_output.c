@@ -1191,7 +1191,7 @@ static int tcp_transmit_skb(struct sock *sk, struct sk_buff *skb, int clone_it,
 
 /* tankdcn: for transmiting an ack*/
 int tcp_transmit_skb_srt(struct sock *sk, struct sk_buff *skb, int clone_it,
-			    gfp_t gfp_mask, __u32 skb_retrans)
+			    gfp_t gfp_mask, __u32 skb_retrans, __u32 skb_onlysack)
 {
 	const struct inet_connection_sock *icsk = inet_csk(sk);
 	struct inet_sock *inet;
@@ -1285,10 +1285,9 @@ int tcp_transmit_skb_srt(struct sock *sk, struct sk_buff *skb, int clone_it,
 		}
 	}
 
-	/* tankdcn: assigning priority */
+	/* tankdcn: assigning retrans and onlysack */
 	skb->skb_retrans = skb_retrans;
-	/* tankdcn: marking push flag as 0 */
-	TCP_SKB_CB(skb)->tcp_flags &= (!TCPHDR_PSH);
+	skb->skb_onlysack = skb_onlysack;
 
 	tcp_options_write((__be32 *)(th + 1), tp, &opts);
 	skb_shinfo(skb)->gso_type = sk->sk_gso_type;
@@ -1336,9 +1335,6 @@ int tcp_transmit_skb_srt(struct sock *sk, struct sk_buff *skb, int clone_it,
 	/* Cleanup our debris for IP stacks */
 	memset(skb->cb, 0, max(sizeof(struct inet_skb_parm),
 			       sizeof(struct inet6_skb_parm)));
-
-	if(sk->sk_logme)
-		printk(KERN_DEBUG "tankdcn: tcp_transmit_skb_srt: Sending out packet with priority = %u and retrans = %u \n", skb->priority, skb->skb_retrans);
 
 
 	err = icsk->icsk_af_ops->queue_xmit(sk, skb, &inet->cork.fl);
@@ -3789,7 +3785,7 @@ EXPORT_SYMBOL_GPL(tcp_send_ack);
 
 
 /* tankdcn : call sender retrans a skb*/
-void tcp_send_ack_srt(struct sock *sk, __u32 skb_retrans)
+void tcp_send_ack_srt(struct sock *sk, __u32 skb_retrans, __u32 skb_onlysack)
 {
 	struct sk_buff *buff;
 
@@ -3823,8 +3819,12 @@ void tcp_send_ack_srt(struct sock *sk, __u32 skb_retrans)
 	 */
 	skb_set_tcp_pure_ack(buff);
 
+	if(sk->logme)
+		printk(KERN_DEBUG "tankdcn: tcp_send_ack_srt: sending an ack with ack_seq = %u, (retrans = %u, onlysack = %u)\n", TCP_SKB_CB(buff)->ack_seq, skb_retrans, skb_onlysack);
+
+
 	/* Send it off, this clears delayed acks for us. */
-	tcp_transmit_skb_srt(sk, buff, 0, (__force gfp_t)0, skb_retrans);
+	tcp_transmit_skb_srt(sk, buff, 0, (__force gfp_t)0, skb_retrans, skb_onlysack);
 }
 
 
