@@ -5332,8 +5332,11 @@ void tcp_rcv_established(struct sock *sk, struct sk_buff *skb,
 		return;
 	}
 
+	if (sk->sk_logme)
+                printk(KERN_DEBUG "tankdcn: tcp_rcv_established recieve a packet with seq = %u, end_seq = %u, tp->rcv_nxt = %u\n", TCP_SKB_CB(skb)->seq, TCP_SKB_CB(skb)->end_seq, tp->rcv_nxt);
+
 	/* tankdcn: check if ofo packet*/
-	if (sk->sk_srt && after(TCP_SKB_CB(skb)->end_seq, tp->rcv_nxt)){
+	if (sk->sk_srt && after(TCP_SKB_CB(skb)->seq, tp->rcv_nxt)){
 		if(sk->sk_logme)
 				printk(KERN_DEBUG "tankdcn: tcp_rcv_established: Recieving an ofo packet\n");
 		tcp_data_queue(sk, skb);
