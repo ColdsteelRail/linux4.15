@@ -501,8 +501,14 @@ packet_routed:
 	/* tanklabdcn: Adding values to tos header in the DSCP field*/
 	if (sk->sk_srt)
 	{
-		iph->tos = iph->tos | (skb->skb_retrans << 5);
-		iph->tos = iph->tos | (skb->skb_onlysack << 6);	
+		if (skb->skb_retrans == 0)
+                        iph->tos = iph->tos & 0xdf;
+                else
+                        iph->tos = iph->tos | (skb->skb_retrans << 5);
+                if (skb->skb_onlysack == 0)
+                        iph->tos = iph->tos & 0xbf;
+                else
+                        iph->tos = iph->tos | (skb->skb_onlysack << 6);
 	}
 	else
 		skb->priority = sk->sk_priority;

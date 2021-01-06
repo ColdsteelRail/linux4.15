@@ -5308,9 +5308,9 @@ void tcp_rcv_established(struct sock *sk, struct sk_buff *skb,
 	struct tcp_sock *tp = tcp_sk(sk);
 
 	/* tankdcn: if srt ack */
-	if (sk->sk_srt && (skb->retrans || skb->updsack))
+	if (sk->sk_srt && (skb->skb_retrans == 1 || skb->skb_onlysack == 1))
 	{
-		if(sk->logme)
+		if(sk->sk_logme)
 			printk(KERN_DEBUG "tankdcn: tcp_rcv_established: Recieving an ack with ack_seq = %u, (retrans = %u, onlysack = %u)\n", TCP_SKB_CB(skb)->ack_seq, skb->skb_retrans, skb->skb_onlysack);
 
 		if (TCP_SKB_CB(skb)->sacked) 
@@ -5337,7 +5337,7 @@ void tcp_rcv_established(struct sock *sk, struct sk_buff *skb,
 		if(sk->sk_logme)
 				printk(KERN_DEBUG "tankdcn: tcp_rcv_established: Recieving an ofo packet\n");
 		tcp_data_queue(sk, skb);
-		if(rb_to_skb(rb_first(&tp->out_of_order_queue)->priority == 
+		if(rb_to_skb(rb_first(&tp->out_of_order_queue))->priority == 
 						skb_peek_tail(&sk->sk_receive_queue)->priority)
 			tcp_send_ack_srt(sk,  1, 0);
 		else

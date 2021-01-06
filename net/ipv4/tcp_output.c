@@ -1126,8 +1126,9 @@ static int tcp_transmit_skb(struct sock *sk, struct sk_buff *skb, int clone_it,
 		}
 	}
 
-	/*tankdcn: ensuring skb_retrans = 0 here*/
+	/* tankdcn: ensuring skb_retrans and skb_onlysack is 0*/
 	skb->skb_retrans = 0;
+	skb->skb_onlysack = 0;
 
 	tcp_options_write((__be32 *)(th + 1), tp, &opts);
 	skb_shinfo(skb)->gso_type = sk->sk_gso_type;
@@ -3819,7 +3820,7 @@ void tcp_send_ack_srt(struct sock *sk, __u32 skb_retrans, __u32 skb_onlysack)
 	 */
 	skb_set_tcp_pure_ack(buff);
 
-	if(sk->logme)
+	if(sk->sk_logme)
 		printk(KERN_DEBUG "tankdcn: tcp_send_ack_srt: sending an ack with ack_seq = %u, (retrans = %u, onlysack = %u)\n", TCP_SKB_CB(buff)->ack_seq, skb_retrans, skb_onlysack);
 
 
