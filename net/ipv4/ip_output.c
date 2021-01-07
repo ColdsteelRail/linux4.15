@@ -515,7 +515,7 @@ packet_routed:
 
 	
 	if (sk->sk_logme)
-		printk(KERN_DEBUG "tankdcn: ip_queue_xmit: Sending out packet with priority = %u, retrans = %u tos = %u\n", skb->priority, skb->skb_retrans, iph->tos);
+		printk(KERN_DEBUG "tankdcn: ip_queue_xmit: Sending out packet with priority = %u, retrans = %u, onlyack = %u, tos = %u\n", skb->priority, skb->skb_retrans, skb->skb_onlysack, iph->tos);
 
 
 	skb->mark = sk->sk_mark;
