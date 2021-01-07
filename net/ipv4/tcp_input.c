@@ -5336,20 +5336,32 @@ void tcp_rcv_established(struct sock *sk, struct sk_buff *skb,
                 printk(KERN_DEBUG "tankdcn: tcp_rcv_established recieve a packet with seq = %u, end_seq = %u, tp->rcv_nxt = %u\n", TCP_SKB_CB(skb)->seq, TCP_SKB_CB(skb)->end_seq, tp->rcv_nxt);
 
 	/* tankdcn: check if ofo packet*/
-	if (sk->sk_srt && after(TCP_SKB_CB(skb)->seq, tp->rcv_nxt)){
-		if(sk->sk_logme)
-				printk(KERN_DEBUG "tankdcn: tcp_rcv_established: Recieving an ofo packet\n");
-		tcp_data_queue(sk, skb);
-		if(!RB_EMPTY_ROOT(&tp->out_of_order_queue) &&
-                        skb_queue_len(&sk->sk_receive_queue) > 0 &&
-                        rb_to_skb(rb_first(&tp->out_of_order_queue))->priority ==
-                                                skb_peek_tail(&sk->sk_receive_queue)->priority
-                        )
-                        tcp_send_ack_srt(sk,  1, 0); /*try to retransmit lost packet*/
+	if (sk->sk_srt && after(TCP_SKB_CB(skb)->seq, tp->rcv_nxt))
+        {
+                struct sk_buff * old_ofo_head, *new_ofo_head;
+                struct sk_buff * rcv_tail;
+
+                old_ofo_head = rb_to_skb(rb_first(&tp->out_of_order_queue));
+                rcv_tail = skb_peek_tail(&sk->sk_receive_queue);
+
+                if(sk->sk_logme)
+                                printk(KERN_DEBUG "tankdcn: tcp_rcv_established: Recieving an ofo packet\n");
+
+                tcp_data_queue(sk, skb);
+                new_ofo_head = rb_to_skb(rb_first(&tp->out_of_order_queue));
+                if(new_ofo_head && rcv_tail &&
+                        new_ofo_head->priority == rcv_tail->priority)
+                {
+                        if(!old_ofo_head)
+                                tcp_send_ack_srt(sk,  1, 0); // ofo queue's len = 1
+                        else
+                                tcp_send_ack_srt(sk,  0, 1); // ofo queue's len > 1, only update sack
+                }
                 else
-                        tcp_send_ack_srt(sk,  0, 1); /*otherwise, only update sack board*/
+                        tcp_send_ack_srt(sk,  0, 1);    // otherwise only update sack
                 return;
-	}
+        }
+
 
 	tcp_mstamp_refresh(tp);
 	if (unlikely(!sk->sk_rx_dst))
