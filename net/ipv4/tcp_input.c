@@ -5340,12 +5340,15 @@ void tcp_rcv_established(struct sock *sk, struct sk_buff *skb,
 		if(sk->sk_logme)
 				printk(KERN_DEBUG "tankdcn: tcp_rcv_established: Recieving an ofo packet\n");
 		tcp_data_queue(sk, skb);
-		if(rb_to_skb(rb_first(&tp->out_of_order_queue))->priority == 
-						skb_peek_tail(&sk->sk_receive_queue)->priority)
-			tcp_send_ack_srt(sk,  1, 0);
-		else
-			tcp_send_ack_srt(sk,  0, 1);
-		return;
+		if(!RB_EMPTY_ROOT(&tp->out_of_order_queue) &&
+                        skb_queue_len(&sk->sk_receive_queue) > 0 &&
+                        rb_to_skb(rb_first(&tp->out_of_order_queue))->priority ==
+                                                skb_peek_tail(&sk->sk_receive_queue)->priority
+                        )
+                        tcp_send_ack_srt(sk,  1, 0); /*try to retransmit lost packet*/
+                else
+                        tcp_send_ack_srt(sk,  0, 1); /*otherwise, only update sack board*/
+                return;
 	}
 
 	tcp_mstamp_refresh(tp);
